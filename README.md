@@ -134,10 +134,5 @@ If you meet any questions when you run this code ,   please don't hesitate  to r
 Please consider citing this project in your publications if it helps your research. The following is a BibTeX reference. The BibTeX entry  requires the `url` LaTeX package.
 
 ```latex
-@article{li2019multi,
-  title={Multi-step Cascaded Networks for Brain Tumor Segmentation},
-  author={Li, Xiangyu and Luo, Gongning and Wang, Kuanquan},
-  journal={arXiv preprint arXiv:1908.05887},
-  year={2019}
-}
+
 ```
