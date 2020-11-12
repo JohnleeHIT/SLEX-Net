@@ -24,9 +24,7 @@ between two adjacent slices by mapping predictions from one slice to another. Se
 
 
 
-<p align="center">
-    <img src="images/SLEX-Net.png"/>
-</p>
+
 
 
 
