@@ -8,7 +8,6 @@
 
 <p align="center">
     <img src="images/test6.gif" width="750"/>
-    <img src="images/test21.gif" width="750"/>
 </p>
 
 
