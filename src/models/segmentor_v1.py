@@ -258,5 +258,145 @@ class HybridUNet_single_out_multi_slices(nn.Module):
         return self
 
 
+def conv3x3(in_planes, out_planes, stride=1):
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
+
+
+class SELayer(nn.Module):
+    def __init__(self, channel, reduction=16):
+        super(SELayer, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Linear(channel, channel // reduction, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Linear(channel // reduction, channel, bias=False),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        b, c, _, _ = x.size()
+        y = self.avg_pool(x).view(b, c)
+        y = self.fc(y).view(b, c, 1, 1)
+        y = y.expand_as(x)
+        z = x*y
+        return z
+        # return x * y.expand_as(x)
+
+
+class SEBasicBlock(nn.Module):
+    expansion = 1
+
+    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
+                 base_width=64, dilation=1, norm_layer=None,
+                 *, reduction=16):
+        super(SEBasicBlock, self).__init__()
+        self.conv1 = conv3x3(inplanes, planes, stride)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = conv3x3(planes, planes, 1)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.se = SELayer(planes, reduction)
+        self.downsample = downsample
+        self.stride = stride
+
+    def forward(self, x):
+        residual = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.se(out)
+
+        # out += residual
+
+        if self.downsample is not None:
+            out = self.downsample(out)
+        out = self.relu(out)
+
+        return out
+
+
+class AttentionNet(nn.Module):
+    def __init__(self, n_channels, n_classes, drop_rate=0.0, bilinear=True):
+        super(AttentionNet, self).__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear
+        self.down_sample = nn.MaxPool2d(2)
+        self.inc = DoubleConv(n_channels, 64)
+        self.down1 = SEBasicBlock(64, 128, downsample=self.down_sample)
+        self.down2 = SEBasicBlock(128, 256, downsample=self.down_sample)
+        self.down3 = SEBasicBlock(256, 512, downsample=self.down_sample)
+        self.down4 = SEBasicBlock(512, 512, downsample=self.down_sample)
+        # self.down2 = Down(128, 256, drop_rate)
+        # self.down3 = Down(256, 512, drop_rate)
+        # self.down4 = Down(512, 512, drop_rate)
+        self.up1 = Up(1024, 256, drop_rate, bilinear)
+        self.up2 = Up(512, 128, drop_rate, bilinear)
+        self.up3 = Up(256, 64, drop_rate, bilinear)
+        self.up4 = Up(128, 64, drop_rate, bilinear)
+        self.outc = OutConv(64, n_classes)
+        initialize_weights(self)
+
+    def forward(self, x):
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+
+        x = self.up1(x5, x4)
+        x = self.up2(x, x3)
+        x = self.up3(x, x2)
+        x = self.up4(x, x1)
+        logits = self.outc(x)
+        # softmax_out = F.softmax(logits, dim=1)
+        return logits
+
+
+class SLEXAttention(nn.Module):
+    def __init__(self, backbone_channel, backbone_class, drop_rate, SMM_channels, SMM_class):
+        super(SLEXAttention, self).__init__()
+        self.backbone = Unet(n_channels=backbone_channel, drop_rate=drop_rate, n_classes=backbone_class)
+        self.SMM = AttentionNet(n_channels=SMM_channels, n_classes=SMM_class, drop_rate=drop_rate)
+
+    def forward(self, input, lamda=0.5):
+        # Here input is 3 adjacent slices
+        # three backbone network
+        input0 = torch.unsqueeze(input[:, 0, ...], 1)
+        input1 = torch.unsqueeze(input[:, 1, ...], 1)
+        input2 = torch.unsqueeze(input[:, 2, ...], 1)
+
+        self.out0 = self.backbone(input0)
+        self.out1 = self.backbone(input1)
+        self.out2 = self.backbone(input2)
+
+        # ensure the right order in the circle(get the start point)
+        input_smm21 = torch.cat((input2, input1,torch.unsqueeze(self.out2[:,1, ...], 1)) ,dim=1)
+        # input_smm21 = torch.cat((input2, input1, self.out2), dim=1)
+        self.out1_smm_2 = self.SMM(input_smm21)
+
+        input_smm01 = torch.cat((input0, input1, torch.unsqueeze(self.out0[:,1, ...], 1)), 1)
+        # input_smm01 = torch.cat((input0, input1, self.hybrid_0), 1)
+        self.out1_smm_0 = self.SMM(input_smm01)
+
+        # consistency error map
+        self.consistency_error = torch.exp(-(self.out1_smm_0-self.out1_smm_2)**2)*lamda
+        self.hybrid = self.out1*(1-self.consistency_error*2)+self.out1_smm_2*self.consistency_error\
+                      +self.out1_smm_0*self.consistency_error
+        # self.hybrid = self.out1_smm_2 * lamda + lamda * self.out1_smm_0 + self.out1*(1-2*lamda)
+        # output
+        self.final_out = self.hybrid
+        self.intermediate = torch.cat((self.out1_smm_2, self.out1_smm_0, self.out1),1)
+        #  add final softmax output
+        self.softmax_out = torch.cat((F.softmax(self.out1_smm_2, dim=1),
+                                     F.softmax(self.out1_smm_0, dim=1),
+                                     F.softmax(self.out1, dim=1),
+                                     F.softmax(self.final_out, dim=1)), 1)
+
+        return self
+
 if __name__ == "__main__":
     import numpy as np
