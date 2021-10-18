@@ -1,6 +1,6 @@
 # SLEX-Net
 
-[Hematoma Expansion Context Guided Intracranial Hemorrhage Segmentation and Uncertainty Estimation(Pytorch)](https://arxiv.org/abs/1908.05887)
+[Hematoma Expansion Context Guided Intracranial Hemorrhage Segmentation and Uncertainty Estimation(Pytorch)](https://ieeexplore.ieee.org/abstract/document/9511297)
 
 <p align="center">
        Input Volume...............................  GroundTruth ................Predictions
