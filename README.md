@@ -133,14 +133,13 @@ If you meet any questions when you run this code ,   please don't hesitate  to r
 Please consider citing this project in your publications if it helps your research. The following is a BibTeX reference. The BibTeX entry  requires the `url` LaTeX package.
 
 ```latex
-@ARTICLE{9511297,  
-    author={Li, Xiangyu and Luo, Gongning and Wang, Wei and Wang, Kuanquan and Gao, Yue 	and Li, Shuo},  
-    journal={IEEE Journal of Biomedical and Health Informatics},   
-    title={Hematoma Expansion Context Guided Intracranial Hemorrhage Segmentation and 		Uncertainty Estimation},   
-    year={2021},  
-    volume={},  
-    number={},  
-    pages={1-1},  
-    doi={10.1109/JBHI.2021.3103850}
-}
+@ARTICLE{9511297,
+ author={Li, Xiangyu and Luo, Gongning and Wang, Wei and Wang, Kuanquan and Gao, Yue and Li, Shuo},
+ journal={IEEE Journal of Biomedical and Health Informatics}, 
+ title={Hematoma Expansion Context Guided Intracranial Hemorrhage Segmentation and Uncertainty Estimation}, 
+ year={2022},
+ volume={26},
+ number={3},
+ pages={1140-1151},
+ doi={10.1109/JBHI.2021.3103850}}
 ```
