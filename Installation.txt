@@ -1,9 +1,9 @@
-1：Create a conda virtual enviroment
+1： Create a conda virtual enviroment
 conda create -n  Slexet  python=3.6 
 
-2：Enter the virtual enviroment
+2： Enter the virtual enviroment
 conda activate Slexet  
 
-3：run the script for installing packages：
+3： run the script for installing packages：
 sh  run.sh
 
