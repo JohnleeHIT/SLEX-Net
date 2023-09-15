@@ -130,7 +130,7 @@ If you meet any questions when you run this code ,   please don't hesitate  to r
 
 ## Citations
 
-Please consider citing this project in your publications if it helps your research. The following is a BibTeX reference. The BibTeX entry  requires the `url` LaTeX package.
+Please consider citing this project in your publications if it helps your research. The following is a BibTeX reference. The BibTeX entry  requires the `url` LaTeX package
 
 ```latex
 @ARTICLE{9511297,
