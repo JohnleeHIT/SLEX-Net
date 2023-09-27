@@ -45,7 +45,6 @@ class Config(object):
     # Testing
     num_ckp_test = '00040'
 
-    # ckp_test = '/home/lixiangyu/myprojects/TMI/result/test_other_methods/AH-Net/resize 224X224 crop_size 224X224X16 5倍输入 augmentation/checkpoints/best_checkpoint.pth'
     # ckp_test = '/home/lixiangyu/myprojects/TMI/result/test_other_methods/AH-Net/resize 224X224/checkpoints/best_checkpoint.pth'
     # ckp_test = '/home/lixiangyu/myprojects/TMI/result/test_other_methods/Asconv/224X224/checkpoints/best_checkpoint.pth'
     ckp_test = '/home/lixiangyu/myprojects/TMI/result/test_weight_consistency/测试consistency/lamda=0.2情况/best_checkpoint.pth'
